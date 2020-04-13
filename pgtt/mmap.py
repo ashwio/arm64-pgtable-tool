@@ -118,7 +118,6 @@ class MemoryMap():
                     r = MemoryRegion(lineno+1, label, addr, length, is_device)
                     self._ivtree.addi(addr, addr+length, r)
                     log.debug(f"added memory region {r}")
-                    log.debug(f"{self._ivtree}")
 
         except OSError as e:
             log.error(f"failed to open map file: {e}")
