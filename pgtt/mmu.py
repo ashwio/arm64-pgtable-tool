@@ -7,10 +7,12 @@ SPDX-License-Identifier: MIT
 # Standard Python deps
 import math
 from dataclasses import dataclass
+from typing import List
 
 # Internal deps
 from . import args
 from . import log
+from .register import Register
 
 
 """
@@ -44,67 +46,7 @@ if (args.tsz - block_offset_bits) % table_idx_bits == 0:
 log.debug(f"{start_level=}")
 
 
-class Bitfield:
-    """
-    Class representing a bitfield in a system register.
-    """
-    def __init__( self, hi, lo, value=0 ):
-        mask = (1 << (hi - lo + 1)) - 1
-        self.value = (value & mask) << lo
-
-
-    def __or__( self, other ):
-        """
-        Overload logical OR operator to use internal value.
-        """
-        return self.value | (other.value if type(other) is Bitfield else other)
-
-
-    def __ror__( self, other ):
-        """
-        Reuse same overloaded logical OR operator when bitfield is right operand.
-        """
-        return self.__or__(other)
-
-
-class Register:
-    """
-    Class representing a system register.
-    """
-    def __init__( self, name:str ):
-        self.name = name
-        self.fields = {}
-        self.res1s = []
-
-
-    def field( self, hi:int, lo:int, name:str, value:int ) -> None:
-        """
-        Add a bitfield to this system register.
-        """
-        self.fields[name] = Bitfield(hi, lo, value)
-        log.debug(f"{self.name}.{name}={value}")
-
-
-    def res1( self, pos:int ) -> None:
-        """
-        Add a RES1 bit to this system register.
-        """
-        self.res1s.append(Bitfield(pos, pos, 1))
-        log.debug(f"{self.name}.res1[{pos}]=1")
-
-
-    def value( self ) -> str:
-        """
-        Generate the required runtime value for this system register.
-        """
-        val = 0
-        for f in list(self.fields.values()) + self.res1s:
-            val = val | f
-        val = hex(val)
-        log.debug(f"{self.name}={val}")
-
-
-def _tcr():
+def _tcr() -> str:
     """
     Generate required value for TCR_ELn.
     """
@@ -134,7 +76,7 @@ def _tcr():
         reg.res1(31)
     reg.fields["ps"].value = {32:0, 36:1, 40:2, 48:5}[args.tsz]
 
-    return reg.value()
+    return hex(reg.value())
 
 tcr = _tcr()
 
@@ -151,7 +93,7 @@ ttbr = args.ttb
 log.debug(f"ttbr0_el{args.el}={hex(ttbr)}")
 
 
-def _sctlr():
+def _sctlr() -> str:
     """
     Generate required value for SCTLR_ELn.
     """
@@ -176,6 +118,31 @@ def _sctlr():
     if args.el == 1:
         reg.res1(20)
 
-    return reg.value()
+    return hex(reg.value())
 
 sctlr = _sctlr()
+
+
+def _template_block_page( addr:int, is_device:bool=True, is_page:bool=False ):
+    """
+    Generate template for block and page descriptors.
+    """
+    pte = Register("pte")
+    pte.field( 0,  0, "valid", 1)
+    pte.field( 1,  1, "[1]", int(is_page))
+    pte.field( 4,  2, "attrindx", int(is_device))
+    pte.field( 9,  8, "sh", 3)  # Inner Shareable, ignored by Device memory
+    pte.field(10, 10, "af", 1)  # Disable Access Flag faults
+    return pte.value() | addr
+
+
+def block( addr:int, is_device:bool=True ):
+    return _template_block_page(addr, is_device, is_page=False)
+
+
+def page( addr:int, is_device:bool=True):
+    return _template_block_page(addr, is_device, is_page=True)
+
+
+def table( addr:int ):
+    return addr | 0x3
