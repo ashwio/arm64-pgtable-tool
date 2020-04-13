@@ -125,7 +125,7 @@ sctlr = _sctlr()
 
 def _template_block_page( addr:int, is_device:bool=True, is_page:bool=False ):
     """
-    Generate template for block and page descriptors.
+    Generate block/page descriptors.
     """
     pte = Register("pte")
     pte.field( 0,  0, "valid", 1)
@@ -136,13 +136,13 @@ def _template_block_page( addr:int, is_device:bool=True, is_page:bool=False ):
     return pte.value() | addr
 
 
-def block( addr:int, is_device:bool=True ):
+def block_entry( addr:int, is_device:bool=True ):
     return _template_block_page(addr, is_device, is_page=False)
 
 
-def page( addr:int, is_device:bool=True):
+def page_entry( addr:int, is_device:bool=True):
     return _template_block_page(addr, is_device, is_page=True)
 
 
-def table( addr:int ):
+def table_entry( addr:int ):
     return addr | 0x3
