@@ -67,6 +67,9 @@ class MemoryMap():
                     if len(split_line) > 4:
                         abort_bad_region("format: unexpected field(s)", line[line.find(split_line[4]):])
                     (addr, length, attrs, label) = split_line
+                    addr = addr.strip()
+                    length = length.strip()
+                    attrs = attrs.strip()
 
                     """
                     Parse region base address.
