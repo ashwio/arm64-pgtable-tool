@@ -146,12 +146,12 @@ class Table:
 
 
     def __str__( self ):
-        margin = " " * self.level * 4
-        string = f" level {self.level} table @ {hex(self.addr)}\n"
+        margin = " " * (self.level - mmu.start_level) * 4
+        string = f"{margin}level {self.level} table @ {hex(self.addr)}\n"
         for k in sorted(list(self.entries.keys())):
             entry = self.entries[k]
             if type(entry) is Table:
-                string += "{}[#{:>4}]".format(margin, k)
+                string += "{}[#{:>4}]\n".format(margin, k)
                 string += str(entry)
             else:
                 string += "{}[#{:>4}] 0x{:>012}-0x{:>012}, {}, {}\n".format(
