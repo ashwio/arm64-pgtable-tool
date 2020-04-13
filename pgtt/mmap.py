@@ -95,6 +95,20 @@ class MemoryMap():
                     length = int(qty) * 1024 ** ("KMGT".find(unit) + 1)
 
                     """
+                    Fudge region to be mappable at chosen granule size.
+                    """
+                    misalignment = addr % args.tg
+                    if misalignment:
+                        addr = addr - misalignment
+                        length = length + args.tg
+                        log.debug(f"corrected misalignment, new {addr=}, {length=}")
+                    
+                    overflow = length % args.tg
+                    if overflow:
+                        length = length + args.tg - overflow
+                        log.debug(f"corrected overflow, new {length=}")
+
+                    """
                     Parse region attributes.
                     """
                     log.debug(f"parsing attributes: {attrs}")
