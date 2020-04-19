@@ -123,7 +123,7 @@ def _sctlr() -> str:
 sctlr = _sctlr()
 
 
-def _template_block_page( addr:int, is_device:bool=True, is_page:bool=False ):
+def _template_block_page( is_device:bool, is_page:bool ):
     """
     Generate block/page descriptors.
     """
@@ -133,16 +133,16 @@ def _template_block_page( addr:int, is_device:bool=True, is_page:bool=False ):
     pte.field( 4,  2, "attrindx", int(is_device))
     pte.field( 9,  8, "sh", 3)  # Inner Shareable, ignored by Device memory
     pte.field(10, 10, "af", 1)  # Disable Access Flag faults
-    return pte.value() | addr
+    return pte.value()
 
 
-def block_entry( addr:int, is_device:bool=True ):
-    return _template_block_page(addr, is_device, is_page=False)
+def block_template( addr:int, is_device:bool=True ):
+    return _template_block_page(is_device, is_page=False)
 
 
-def page_entry( addr:int, is_device:bool=True):
-    return _template_block_page(addr, is_device, is_page=True)
+def page_template( addr:int, is_device:bool=True):
+    return _template_block_page(is_device, is_page=True)
 
 
-def table_entry( addr:int ):
-    return addr | 0x3
+def table_template():
+    return 0x3
