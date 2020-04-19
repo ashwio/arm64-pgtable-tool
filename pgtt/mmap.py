@@ -29,6 +29,16 @@ class MemoryRegion:
     length: int             # length in bytes
     is_device: bool         # True for Device-nGnRnE, False for Normal WB RAWA
 
+    def copy( self, **kwargs ):
+        """
+        Create a duplicate of this MemoryRegion.
+        Use kwargs to override this region's corresponding properties.
+        """
+        region = MemoryRegion(self.lineno, self.label, self.addr, self.length, self.is_device)
+        for kw,arg in kwargs.items():
+            region.__dict__[kw] = arg
+        return region
+
 
 class MemoryMap():
     """
