@@ -39,6 +39,8 @@ class Register:
         self.name = name
         self.fields = {}
         self.res1s = []
+        log.debug()
+        log.debug(f"{name}")
 
 
     def field( self, hi:int, lo:int, name:str, value:int ) -> None:
