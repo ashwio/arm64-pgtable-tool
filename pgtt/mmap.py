@@ -47,6 +47,7 @@ class MemoryMap():
                 """
                 for lineno,line in enumerate(map_file_lines):
                     line = line.strip()
+                    log.debug()
                     log.debug(f"parsing line {lineno}: {line}")
 
                     def abort_bad_region( msg:str, variable ) -> None:
@@ -70,6 +71,7 @@ class MemoryMap():
                     addr = addr.strip()
                     length = length.strip()
                     attrs = attrs.strip()
+                    label = label.strip()
 
                     """
                     Parse region base address.
@@ -101,12 +103,12 @@ class MemoryMap():
                     if misalignment:
                         addr = addr - misalignment
                         length = length + args.tg
-                        log.debug(f"corrected misalignment, new {addr=}, {length=}")
+                        log.debug("corrected misalignment, new addr={}, length={}".format(hex(addr), hex(length)))
                     
                     overflow = length % args.tg
                     if overflow:
                         length = length + args.tg - overflow
-                        log.debug(f"corrected overflow, new {length=}")
+                        log.debug("corrected overflow, new length={}".format(hex(length)))
 
                     """
                     Parse region attributes.
@@ -134,7 +136,7 @@ class MemoryMap():
                     """
                     r = MemoryRegion(lineno+1, label, addr, length, is_device)
                     self._ivtree.addi(addr, addr+length, r)
-                    log.debug(f"added memory region {r}")
+                    log.debug(f"added {r}")
 
         except OSError as e:
             log.error(f"failed to open map file: {e}")
