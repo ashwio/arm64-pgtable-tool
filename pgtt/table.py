@@ -95,6 +95,7 @@ class Table:
 
         """
         Check for any "overflow".
+        If so, dispatch the overflow to next-level table and proceed.
 
                     +--------------------+
                  // |                    |
@@ -104,7 +105,7 @@ class Table:
                  // |####################|
             Chunk - |####################|
                  \\ |####################|
-                   +--------------------+
+                    +--------------------+
         """
         overflow = (region.addr + region.length) % self.chunk
         if overflow:
