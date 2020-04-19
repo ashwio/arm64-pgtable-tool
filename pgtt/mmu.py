@@ -59,7 +59,7 @@ def _tcr() -> str:
     reg.field( 9,  8, "irgn0", 1)  # Normal WB RAWA
     reg.field(11, 10, "orgn0", 1)  # Normal WB RAWA
     reg.field(13, 12, "sh0", 3)    # Inner Shareable
-    reg.field(15, 14, "tg0", [4*1024, 16*1024, 64*1024].index(args.tg))
+    reg.field(15, 14, "tg0", {4*1024:0, 16*1024:2, 64*1024:1}[args.tg])
 
     """
     Bits that are RES1 at all exception levels.
@@ -69,12 +69,12 @@ def _tcr() -> str:
     """
     Exception level specific differences.
     """
+    ps_val = {32:0, 36:1, 40:2, 48:5}[args.tsz]
     if args.el == 1:
-        reg.field(34, 32, "ps", 0)
+        reg.field(34, 32, "ps", ps_val)
     else:
-        reg.field(18, 16, "ps", 0)
+        reg.field(18, 16, "ps", ps_val)
         reg.res1(31)
-    reg.fields["ps"].value = {32:0, 36:1, 40:2, 48:5}[args.tsz]
 
     return hex(reg.value())
 
@@ -125,7 +125,7 @@ sctlr = _sctlr()
 
 def _template_block_page( is_device:bool, is_page:bool ):
     """
-    Generate block/page descriptors.
+    Translation table entry fields common across all exception levels.
     """
     pte = Register("pte")
     pte.field( 0,  0, "valid", 1)
@@ -133,7 +133,16 @@ def _template_block_page( is_device:bool, is_page:bool ):
     pte.field( 4,  2, "attrindx", int(is_device))
     pte.field( 9,  8, "sh", 3)  # Inner Shareable, ignored by Device memory
     pte.field(10, 10, "af", 1)  # Disable Access Flag faults
-    return pte.value()
+
+    """
+    Exception level specific differences.
+    """
+    if args.el == 1:
+        pte.field(53, 53, "pxn", int(is_device))
+    else:
+        pte.field(54, 54, "xn", int(is_device))
+
+    return hex(pte.value())
 
 
 def block_template( is_device:bool=True ):
@@ -145,4 +154,4 @@ def page_template( is_device:bool=True):
 
 
 def table_template():
-    return 0x3
+    return hex(0x3)
