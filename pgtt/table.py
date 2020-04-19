@@ -181,3 +181,15 @@ def alloc( level:int, va_base:int ) -> Table:
     _allocated_tables.append(Table(addr, level, va_base))
     log.debug(f"allocated table #{len(_allocated_tables)} @ {hex(addr)}")
     return _allocated_tables[-1]
+
+
+def usage() -> str:
+    """
+    Generate memory allocation usage information for the user.
+    """
+    global _allocated_tables
+    granule_string = {4*1024:"4K", 16*1024:"16K", 64*1024:"64K"}[args.tg]
+    string  = f"memory map requires {len(_allocated_tables)} translation tables\n"
+    string += f"each table occupies {granule_string} of memory ({hex(args.tg)} bytes)\n"
+    string += f"buffer pointed to by {hex(args.ttb)} must therefore be {len(_allocated_tables)} x {granule_string} = {hex(args.tg * len(_allocated_tables))} bytes long"
+    return string
