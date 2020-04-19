@@ -12,25 +12,53 @@ from typing import List
 from . import args
 from . import log
 from . import mmu
-from .mmap import MemoryRegion
-
-
-_allocated_tables = []
+from . import mmap
 
 
 class Table:
     """
     Class representing a translation table.
     """
-    def __init__( self, addr:int, level:int, va_base:int ):
-        self.addr = addr
+    _allocated = []
+
+
+    def __init__( self, level:int=mmu.start_level, va_base:int=0 ):
+        """
+        Constructor.
+
+        args
+        ====
+
+            level
+                        level of translation
+
+            va_base
+                        base virtual address mapped by entry [0] in this table
+
+        """
+        self.addr = args.ttb + len(Table._allocated) * args.tg
         self.level = level
         self.chunk = args.tg << ((3 - self.level) * mmu.table_idx_bits)
         self.va_base = va_base
         self.entries = {}
+        Table._allocated.append(self)
 
 
-    def map( self, region:MemoryRegion ) -> None:
+    def prepare_next( self, idx:int, va_base:int=None ) -> None:
+        """
+        Allocate next-level table at entry [idx] if it does not already point
+        to a next-level table.
+
+        Leave va_base=None to default to self.va_base + idx * self.chunk.
+        """
+        if not idx in self.entries:
+            self.entries[idx] = Table(
+                self.level + 1,
+                va_base if not va_base is None else (self.va_base + idx * self.chunk)
+            )
+
+
+    def map( self, region:mmap.Region ) -> None:
         """
         Map a region of memory in this translation table.
         """
@@ -40,18 +68,10 @@ class Table:
         assert(region.addr >= self.va_base)
         assert(region.addr + region.length <= self.va_base + mmu.entries_per_table * self.chunk)
 
-
-        def prepare_next_table( idx:int, va_base:int=None ) -> None:
-            if not idx in self.entries:
-                self.entries[idx] = alloc(
-                    self.level + 1,
-                    va_base if not va_base is None else (self.va_base + idx * self.chunk)
-                )
-
-
         """
         Calculate number of chunks required to map this region.
         A chunk is the area mapped by each individual entry in this table.
+        start_idx is the first entry in this table mapping part of the region.
         """
         num_chunks = region.length // self.chunk
         start_idx = (region.addr // self.chunk) % mmu.entries_per_table
@@ -68,7 +88,7 @@ class Table:
         """
         if num_chunks == 0:
             log.debug(f"floating region, dispatching to next-level table")
-            prepare_next_table(start_idx)
+            self.prepare_next(start_idx)
             self.entries[start_idx].map(region)
             return
 
@@ -89,7 +109,7 @@ class Table:
         underflow = region.addr % self.chunk
         if underflow:
             log.debug(f"{underflow=}, dispatching to next-level table")
-            prepare_next_table(start_idx)
+            self.prepare_next(start_idx)
             self.entries[start_idx].map(region.copy(length=(self.chunk - underflow)))
             start_idx = start_idx + 1
 
@@ -112,7 +132,7 @@ class Table:
             log.debug(f"{overflow=}, dispatching to next-level table")
             final_idx = start_idx + num_chunks - (not not underflow)
             va_base = ((region.addr + region.length) // self.chunk) * self.chunk
-            prepare_next_table(final_idx, va_base)
+            self.prepare_next(final_idx, va_base)
             self.entries[final_idx].map(region.copy(addr=va_base, length=overflow))
 
         """
@@ -126,7 +146,7 @@ class Table:
             log.debug(f"mapping complete chunk at index {i}")
             r = region.copy(addr=(self.va_base + i * self.chunk))
             if not blocks_allowed:
-                prepare_next_table(i)
+                self.prepare_next(i)
                 self.entries[i].map(r)
             else:
                 self.entries[i] = r
@@ -154,43 +174,20 @@ class Table:
                     "Device" if entry.is_device else "Normal",
                     entry.label
                 )
-        assert string
         return string
 
 
-    def contiguous_blocks( self ) -> List[MemoryRegion]:
+    @classmethod
+    def usage( cls ) -> str:
         """
-        Get list of contiguous index ranges that can be looped through by the
-        code generator.
+        Generate memory allocation usage information for the user.
         """
-        ranges = []
-        keys = sorted(self.entries.keys())
-        while keys:
-            if keys[1] - keys[0] == 1:
-                # Keys are consecutive
-            else:
-                ranges.append(keys[0], keys[0], )
+        granule_string = {4*1024:"4K", 16*1024:"16K", 64*1024:"64K"}[args.tg]
+        string  = f"memory map requires {len(cls._allocated)} translation tables\n"
+        string += f"each table occupies {granule_string} of memory ({hex(args.tg)} bytes)\n"
+        string += f"buffer pointed to by {hex(args.ttb)} must therefore be {len(cls._allocated)} x {granule_string} = {hex(args.tg * len(cls._allocated))} bytes long"
+        return string
 
 
-def alloc( level:int, va_base:int ) -> Table:
-    """
-    We need to track how many tables are "allocated" by the tool as the user
-    will need reserve space for them in the buffer pointed to by ttbr0_eln.
-    """
-    global _allocated_tables
-    addr = args.ttb + len(_allocated_tables) * args.tg
-    _allocated_tables.append(Table(addr, level, va_base))
-    log.debug(f"allocated table #{len(_allocated_tables)} @ {hex(addr)}")
-    return _allocated_tables[-1]
-
-
-def usage() -> str:
-    """
-    Generate memory allocation usage information for the user.
-    """
-    global _allocated_tables
-    granule_string = {4*1024:"4K", 16*1024:"16K", 64*1024:"64K"}[args.tg]
-    string  = f"memory map requires {len(_allocated_tables)} translation tables\n"
-    string += f"each table occupies {granule_string} of memory ({hex(args.tg)} bytes)\n"
-    string += f"buffer pointed to by {hex(args.ttb)} must therefore be {len(_allocated_tables)} x {granule_string} = {hex(args.tg * len(_allocated_tables))} bytes long"
-    return string
+root = Table()
+[root.map(r) for r in mmap.regions]

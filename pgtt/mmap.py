@@ -19,7 +19,7 @@ from intervaltree import Interval, IntervalTree
 
 
 @dataclass
-class MemoryRegion:
+class Region:
     """
     Class representing a single region in the memory map.
     """
@@ -29,15 +29,25 @@ class MemoryRegion:
     length: int             # length in bytes
     is_device: bool         # True for Device-nGnRnE, False for Normal WB RAWA
 
+
     def copy( self, **kwargs ):
         """
-        Create a duplicate of this MemoryRegion.
+        Create a duplicate of this Region.
         Use kwargs to override this region's corresponding properties.
         """
-        region = MemoryRegion(self.lineno, self.label, self.addr, self.length, self.is_device)
+        region = Region(self.lineno, self.label, self.addr, self.length, self.is_device)
         for kw,arg in kwargs.items():
             region.__dict__[kw] = arg
         return region
+
+
+    def __str__( self ):
+        """
+        Override default __str__ to print addr and length in hex format.
+        """
+        return "Region(lineno={}, label='{}', addr={}, length={}, is_device={}".format(
+            self.lineno, self.label, hex(self.addr), hex(self.length), self.is_device
+        )
 
 
 class MemoryMap():
@@ -144,7 +154,7 @@ class MemoryMap():
                     """
                     Add parsed region to memory map.
                     """
-                    r = MemoryRegion(lineno+1, label, addr, length, is_device)
+                    r = Region(lineno+1, label, addr, length, is_device)
                     self._ivtree.addi(addr, addr+length, r)
                     log.debug(f"added {r}")
 
@@ -155,6 +165,9 @@ class MemoryMap():
 
     def regions( self ):
         """
-        Return list of MemoryRegion objects sorted by ascending base address.
+        Return list of Region objects sorted by ascending base address.
         """
         return list(map(lambda r: r[2], sorted(self._ivtree)))
+
+
+regions = MemoryMap(args.i).regions()
