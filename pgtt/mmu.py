@@ -85,12 +85,12 @@ tcr = _tcr()
 AttrIndx [0] = Normal Inner/Outer Write-Back RAWA
 AttrIndx [1] = Device-nGnRnE
 """
-mair = 0x00FF
-log.debug(f"mair_el{args.el}={hex(mair)}")
+mair = hex(0x00FF)
+log.debug(f"mair_el{args.el}={mair}")
 
 
-ttbr = args.ttb
-log.debug(f"ttbr0_el{args.el}={hex(ttbr)}")
+ttbr = hex(args.ttb)
+log.debug(f"ttbr0_el{args.el}={ttbr}")
 
 
 def _sctlr() -> str:
@@ -136,11 +136,11 @@ def _template_block_page( is_device:bool, is_page:bool ):
     return pte.value()
 
 
-def block_template( addr:int, is_device:bool=True ):
+def block_template( is_device:bool=True ):
     return _template_block_page(is_device, is_page=False)
 
 
-def page_template( addr:int, is_device:bool=True):
+def page_template( is_device:bool=True):
     return _template_block_page(is_device, is_page=True)
 
 
