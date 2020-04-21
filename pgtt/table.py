@@ -142,6 +142,7 @@ class Table:
         blocks_allowed = self.level >= (1 if args.tg == 4*1024 else 2)
         if underflow + overflow == self.chunk:
             num_chunks = num_chunks - 1
+        num_contiguous_blocks = 0
         for i in range(start_idx, start_idx + num_chunks):
             log.debug(f"mapping complete chunk at index {i}")
             r = region.copy(addr=(self.va_base + i * self.chunk))
@@ -150,6 +151,9 @@ class Table:
                 self.entries[i].map(r)
             else:
                 self.entries[i] = r
+            num_contiguous_blocks += 1
+        if num_contiguous_blocks > 0:
+            self.entries[start_idx].num_contig = num_contiguous_blocks
 
 
     def __str__( self ) -> str:

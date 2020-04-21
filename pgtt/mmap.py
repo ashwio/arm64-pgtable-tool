@@ -28,6 +28,7 @@ class Region:
     addr: int               # base address
     length: int             # length in bytes
     is_device: bool         # True for Device-nGnRnE, False for Normal WB RAWA
+    num_contig = 1
 
 
     def copy( self, **kwargs ):
