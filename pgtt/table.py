@@ -187,9 +187,9 @@ class Table:
         Generate memory allocation usage information for the user.
         """
         granule_string = {4*1024:"4K", 16*1024:"16K", 64*1024:"64K"}[args.tg]
-        string  = f"this memory map requires {len(cls._allocated)} translation tables\n"
-        string += f"each table occupies {granule_string} of memory ({hex(args.tg)} bytes)\n"
-        string += f"buffer pointed to by {hex(args.ttb)} must therefore be {len(cls._allocated)}x {granule_string} = {hex(args.tg * len(cls._allocated))} bytes long"
+        string  = f"This memory map requires a total of {len(cls._allocated)} translation tables.\n"
+        string += f"Each table occupies {granule_string} of memory ({hex(args.tg)} bytes).\n"
+        string += f"The buffer pointed to by {hex(args.ttb)} must therefore be {len(cls._allocated)}x {granule_string} = {hex(args.tg * len(cls._allocated))} bytes long."
         return string
 
 
