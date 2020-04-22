@@ -36,7 +36,7 @@ asm_header = """
  *      -el {}
  *      -tg {}
  *      -tsz {}
- *
+{}
 {}
  * It is the programmer's responsibility to guarantee this.
  *
@@ -183,6 +183,7 @@ def generate_asm() -> str:
         args.el,
         {4*1024:"4K", 16*1024:"16K", 64*1024:"64K"}[args.tg],
         args.tsz,
+        " * \n * WARNING: -tg 16K has not been tested.\n * " if args.tg == 16*1024 else " * ",
         "\n".join([f" * {ln}" for ln in table.Table.usage().splitlines()]),
     )
     string += asm_prologue
