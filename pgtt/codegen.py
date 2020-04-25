@@ -27,7 +27,6 @@ def _mk_table( n:int, t:table.Table ) -> str:
                     translation table being programmed
     """
     return f"""
-
 program_table_{n}:
 
     LDR     x8, ={hex(t.addr)}          // base address of this table
