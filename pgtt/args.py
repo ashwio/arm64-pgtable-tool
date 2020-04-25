@@ -74,6 +74,7 @@ i = _args.i
 o = _args.o
 ttb = _args.ttb
 el = _args.el
+tg_str = _args.tg
 tg = {"4K":4*1024, "16K":16*1024, "64K":64*1024}[_args.tg]
 tsz = _args.tsz
 verbose = _args.v >= 1
