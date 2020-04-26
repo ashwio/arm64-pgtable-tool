@@ -139,7 +139,7 @@ class Table:
         Handle any remaining complete chunks.
         """
         region.length = self.chunk
-        blocks_allowed = self.level >= (1 if args.tg == 4*1024 else 2)
+        blocks_allowed = self.level >= (1 if args.tg_str == "4K" else 2)
         if underflow + overflow == self.chunk:
             num_chunks = num_chunks - 1
         num_contiguous_blocks = 0
