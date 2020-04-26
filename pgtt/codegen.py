@@ -215,6 +215,7 @@ init_done:
     STR     w2, [x1]
 
 end:
+
     LDR     x1, ={mmu.ttbr}             // program ttbr0 on this CPU
     MSR     ttbr0_el{args.el}, x1
     LDR     x1, ={mmu.mair}             // program mair on this CPU
