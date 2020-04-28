@@ -59,7 +59,7 @@ def _tcr() -> str:
     reg.field( 9,  8, "irgn0", 1)  # Normal WB RAWA
     reg.field(11, 10, "orgn0", 1)  # Normal WB RAWA
     reg.field(13, 12, "sh0", 3)    # Inner Shareable
-    reg.field(15, 14, "tg0", {4*1024:0, 16*1024:2, 64*1024:1}[args.tg])
+    reg.field(15, 14, "tg0", {"4K":0, "16K":2, "64K":1}[args.tg_str])
 
     """
     Bits that are RES1 at all exception levels.
