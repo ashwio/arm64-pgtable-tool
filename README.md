@@ -89,7 +89,7 @@ Running the following command:
     python3.8 generate.py -i examples/base-fvp-minimal.txt -o fvp.S -ttb 0x90000000 -el 2 -tg 64K -tsz 32
 ```
 
-Where `examples/fvp-base-minimal.txt` contains:
+Where `examples/base-fvp-minimal.txt` contains:
 
 ```
     0x01C090000,   4K, DEVICE, UART0
