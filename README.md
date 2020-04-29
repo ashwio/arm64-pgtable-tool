@@ -6,6 +6,16 @@ Tool for automatically generating MMU and translation table setup code, whether 
 
 For more information see [my blog post](https://ashw.io/blog/arm64-pgtable-tool).
 
+## Prerequisites
+
+* Python 3.8+
+* [chaimleib's IntervalTree](https://github.com/chaimleib/intervaltree)
+
+```
+    pip install intervaltree
+```
+
+
 ## Usage
 
 The following command-line options are available:
@@ -76,7 +86,7 @@ The tool only generates 1-to-1 mappings, often referred to as a "flat map" or "i
 Running the following command:
 
 ```
-    python3 -i examples/fvp-base-minimal.txt -o fvp.S -ttb 0x90000000 -el 2 -tg 64K -tsz 32
+    python3.8 -i examples/base-fvp-minimal.txt -o fvp.S -ttb 0x90000000 -el 2 -tg 64K -tsz 32
 ```
 
 Where `examples/fvp-base-minimal.txt` contains:
