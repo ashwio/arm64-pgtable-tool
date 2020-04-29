@@ -12,7 +12,7 @@ if version_info < (3, 8):
     exit()
 
 try:
-    import IntervalTree
+    import intervaltree
 except ModuleNotFoundError as e:
     print("arm64-pgtable-tool requires IntervalTree: `pip install intervaltree`")
     exit()
