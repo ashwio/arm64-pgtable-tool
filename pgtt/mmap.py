@@ -5,6 +5,7 @@ SPDX-License-Identifier: MIT
 """
 
 # Standard Python deps
+from enum import Enum
 import errno
 import re
 import sys
@@ -17,17 +18,21 @@ from . import log
 # External deps
 from intervaltree import Interval, IntervalTree
 
-
+class MEMORY_TYPE(Enum):
+        device = 0,
+        rw_data = 1,
+        code = 2
 @dataclass
 class Region:
     """
     Class representing a single region in the memory map.
     """
-    lineno: int             # line number in source memory map file
-    label: str              # name/label e.g. DRAM, GIC, UART, ...
-    addr: int               # base address
-    length: int             # length in bytes
-    is_device: bool         # True for Device-nGnRnE, False for Normal WB RAWA
+    
+    lineno: int                    # line number in source memory map file
+    label: str                     # name/label e.g. DRAM, GIC, UART, ...
+    addr: int                      # base address
+    length: int                    # length in bytes
+    memory_type: MEMORY_TYPE         # True for Device-nGnRnE, False for Normal WB RAWA
     num_contig = 1
 
 
@@ -36,7 +41,7 @@ class Region:
         Create a duplicate of this Region.
         Use kwargs to override this region's corresponding properties.
         """
-        region = Region(self.lineno, self.label, self.addr, self.length, self.is_device)
+        region = Region(self.lineno, self.label, self.addr, self.length, self.memory_type)
         for kw,arg in kwargs.items():
             region.__dict__[kw] = arg
         return region
@@ -46,8 +51,8 @@ class Region:
         """
         Override default __str__ to print addr and length in hex format.
         """
-        return "Region(lineno={}, label='{}', addr={}, length={}, is_device={}".format(
-            self.lineno, self.label, hex(self.addr), hex(self.length), self.is_device
+        return "Region(lineno={}, label='{}', addr={}, length={}, memory_type={}".format(
+            self.lineno, self.label, hex(self.addr), hex(self.length), self.memory_type
         )
 
 
@@ -135,10 +140,15 @@ class MemoryMap():
                     Parse region attributes.
                     """
                     log.debug(f"parsing attributes: {attrs}")
-                    if not attrs in ["NORMAL", "DEVICE"]:
+                    if not attrs in ["RW_DATA", "DEVICE", "CODE"]:
                         abort_bad_region("attributes", attrs)
-                    is_device = (attrs == "DEVICE")
-                    log.debug(f"{is_device=}")
+                    if attrs == "DEVICE":
+                        memory_type = MEMORY_TYPE.device
+                    elif attrs == "RW_DATA":
+                        memory_type = MEMORY_TYPE.rw_data
+                    else:
+                        memory_type = MEMORY_TYPE.code
+                    log.debug(f"{memory_type=}")
 
                     """
                     Check for overlap with other regions.
@@ -155,7 +165,7 @@ class MemoryMap():
                     """
                     Add parsed region to memory map.
                     """
-                    r = Region(lineno+1, label, addr, length, is_device)
+                    r = Region(lineno+1, label, addr, length, memory_type)
                     self._ivtree.addi(addr, addr+length, r)
                     log.debug(f"added {r}")
 

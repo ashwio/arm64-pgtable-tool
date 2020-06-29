@@ -170,12 +170,18 @@ class Table:
                 hyphens = "-" * (len(nested_table.splitlines()[0]) - len(header))
                 string += f"{header}" + hyphens + f"\\\n{nested_table}"
             else:
+                if entry.memory_type == mmap.MEMORY_TYPE.rw_data:
+                    memtype = "RW_Data"
+                elif entry.memory_type == mmap.MEMORY_TYPE.device:
+                    memtype = "Device"
+                else:
+                    memtype = "Code"
                 string += "{}[#{:>4}] 0x{:>012}-0x{:>012}, {}, {}\n".format(
                     margin,
                     k,
                     hex(entry.addr)[2:],
                     hex(entry.addr + entry.length - 1)[2:],
-                    "Device" if entry.is_device else "Normal",
+                    memtype,
                     entry.label
                 )
         return string

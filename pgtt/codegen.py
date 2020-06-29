@@ -9,6 +9,7 @@ from . import args
 from . import log
 from . import mmu
 from . import table
+from . import mmap
 from .mmap import Region
 
 
@@ -53,11 +54,12 @@ def _mk_blocks( n:int, t:table.Table, idx:int, r:Region ) -> str:
         r
                     the memory region
     """
-    if r.is_device:
+    if r.memory_type == mmap.MEMORY_TYPE.device:
         template_reg = "x2" if t.level < 3 else "x3"
-    else:
+    elif r.memory_type == mmap.MEMORY_TYPE.rw_data:
         template_reg = "x4" if t.level < 3 else "x5"
-
+    else:
+        template_reg = "x20" if t.level < 3 else "x21"
     return f"""
 
 program_table_{n}_entry_{idx}{f'_to_{idx + r.num_contig - 1}' if r.num_contig > 1 else ''}:
@@ -203,10 +205,13 @@ zero_out_tables:
 
 load_descriptor_templates:
 
-    LDR     x2, ={mmu.block_template(is_device=True)}       // Device block
-    LDR     x3, ={mmu.page_template(is_device=True)}        // Device page
-    LDR     x4, ={mmu.block_template(is_device=False)}      // Normal block
-    LDR     x5, ={mmu.page_template(is_device=False)}       // Normal page
+    LDR     x2, ={mmu.block_template(memory_type=mmap.MEMORY_TYPE.device)}       // Device block
+    LDR     x3, ={mmu.page_template(memory_type=mmap.MEMORY_TYPE.device)}        // Device page
+    LDR     x4, ={mmu.block_template(memory_type=mmap.MEMORY_TYPE.rw_data)}      // RW data block
+    LDR     x5, ={mmu.page_template(memory_type=mmap.MEMORY_TYPE.rw_data)}       // RW data page
+    LDR     x20, ={mmu.block_template(memory_type=mmap.MEMORY_TYPE.code)}      // code block
+    LDR     x21, ={mmu.page_template(memory_type=mmap.MEMORY_TYPE.code)}       // code page
+    
 {_mk_asm()}
 
 init_done:
