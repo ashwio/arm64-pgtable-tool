@@ -104,7 +104,6 @@ def _sctlr() -> str:
     Configurable bitfields present at all exception levels.
     """
     reg.field( 0,  0, "m", 1)    # MMU enabled
-    reg.field( 1,  1, "a", 1)    # Alignment check
     reg.field( 2,  2, "c", 1)    # D-side access cacheability controlled by pgtables
     reg.field(12, 12, "i", 1),   # I-side access cacheability controlled by pgtables
     
