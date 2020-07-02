@@ -13,6 +13,7 @@ from typing import List
 from . import args
 from . import log
 from .register import Register
+from . import mmap
 
 
 """
@@ -105,52 +106,55 @@ def _sctlr() -> str:
     reg.field( 0,  0, "m", 1)    # MMU enabled
     reg.field( 2,  2, "c", 1)    # D-side access cacheability controlled by pgtables
     reg.field(12, 12, "i", 1),   # I-side access cacheability controlled by pgtables
-    reg.field(25, 25, "ee", 0),  # D-side accesses are little-endian
-
-    """
-    Bits that are RES1 at all exception levels.
-    """
-    [reg.res1(x) for x in [4,5,11,16,18,22,23,28,29]]
-
-    """
-    Exception level specific differences.
-    """
-    if args.el == 1:
-        reg.res1(20)
+    
 
     return hex(reg.value())
 
 sctlr = _sctlr()
 
 
-def _template_block_page( is_device:bool, is_page:bool ):
+def _template_block_page( memory_type:mmap.MEMORY_TYPE, is_page:bool ):
     """
     Translation table entry fields common across all exception levels.
     """
     pte = Register("pte")
     pte.field( 0,  0, "valid", 1)
     pte.field( 1,  1, "[1]", int(is_page))
-    pte.field( 4,  2, "attrindx", int(is_device))
+    if memory_type == mmap.MEMORY_TYPE.device:
+        pte.field( 4,  2, "attrindx", 1)
+    elif memory_type == mmap.MEMORY_TYPE.rw_data:
+        pte.field( 4,  2, "attrindx", 0)
+        pte.field( 7,  6, "AP", 0)
+    else:
+        pte.field( 4,  2, "attrindx", 0)
+        pte.field( 7,  6, "AP", 2)
+
     pte.field( 9,  8, "sh", 3)  # Inner Shareable, ignored by Device memory
     pte.field(10, 10, "af", 1)  # Disable Access Flag faults
 
     """
     Exception level specific differences.
     """
-    if args.el == 1:
-        pte.field(53, 53, "pxn", int(is_device))
+    if memory_type == mmap.MEMORY_TYPE.device or memory_type == mmap.MEMORY_TYPE.rw_data:
+        if args.el == 1:
+            pte.field(53, 53, "pxn", 1)
+        else:
+            pte.field(54, 54, "xn", 1)
+    
     else:
-        pte.field(54, 54, "xn", int(is_device))
+        if args.el == 1:
+            pte.field(53, 53, "pxn", 0)
+            pte.field(54, 54, "xn", 0)
 
     return hex(pte.value())
 
 
-def block_template( is_device:bool=True ):
-    return _template_block_page(is_device, is_page=False)
+def block_template( memory_type:mmap.MEMORY_TYPE ):
+    return _template_block_page(memory_type, is_page=False)
 
 
-def page_template( is_device:bool=True):
-    return _template_block_page(is_device, is_page=True)
+def page_template( memory_type:mmap.MEMORY_TYPE):
+    return _template_block_page(memory_type, is_page=True)
 
 
 def table_template():
