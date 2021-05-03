@@ -134,6 +134,7 @@ class Table:
             va_base = ((region.addr + region.length) // self.chunk) * self.chunk
             self.prepare_next(final_idx, va_base)
             self.entries[final_idx].map(region.copy(addr=va_base, length=overflow))
+            num_chunks = num_chunks - 1
 
         """
         Handle any remaining complete chunks.
