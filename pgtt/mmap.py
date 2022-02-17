@@ -128,7 +128,7 @@ class MemoryMap():
                     misalignment = addr % args.tg
                     if misalignment:
                         addr = addr - misalignment
-                        length = length + args.tg
+                        length = length + misalignment
                         log.debug("corrected misalignment, new addr={}, length={}".format(hex(addr), hex(length)))
                     
                     overflow = length % args.tg
